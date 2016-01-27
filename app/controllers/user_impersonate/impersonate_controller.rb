@@ -131,23 +131,21 @@ module UserImpersonate
     end
 
     def redirect_on_impersonate(impersonated_user)
-      url = config_or_default :redirect_on_impersonate, root_url
+      url = config_or_default :redirect_on_impersonate, root_url, impersonated_user
       redirect_to url
     end
 
     def redirect_on_revert(impersonated_user = nil)
-      url = config_or_default :redirect_on_revert, root_url
+      url = config_or_default :redirect_on_revert, root_url, impersonated_user
       redirect_to url
     end
 
     # gets overridden config value for engine, else returns default
-    def config_or_default(attribute, default)
-      attribute = attribute.to_sym
-      if UserImpersonate::Engine.config.respond_to?(attribute)
-        UserImpersonate::Engine.config.send(attribute)
-      else
-        default
-      end
+    def config_or_default(attribute, default, impersonated_user = nil)
+      return default unless UserImpersonate::Engine.config.respond_to?(attribute = attribute.to_sym)
+
+      config_option = UserImpersonate::Engine.config.send(attribute)
+      config_option.respond_to?(:call) ? config_option.call(main_app, impersonated_user) : config_option
     end
   end
 end
